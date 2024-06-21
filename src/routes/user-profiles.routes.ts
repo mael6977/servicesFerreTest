@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { getAllUserProfiles, getUserProfileById, createUserProfile, updateUserProfile, deleteUserProfile } from '../controllers/user-profile.controller';
+import { login, validateToken } from '../service/authService/auth.service';
+const router: Router = Router();
+router.post('/login', login);
+router.get('/validate-token', validateToken);
+router.get('/', getAllUserProfiles);
+router.get('/:id', getUserProfileById);
+router.post('/', createUserProfile);
+router.put('/:id', updateUserProfile);
+router.delete('/:id', deleteUserProfile);
+export default router;
