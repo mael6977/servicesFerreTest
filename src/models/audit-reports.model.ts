@@ -1,31 +1,30 @@
 import mongoose from "mongoose";
+import { Audit } from "../interfaces/audit.interface";
 const { Schema } = mongoose;
-
-const auditSchema = new Schema({
-    auditor: { type: Schema.Types.ObjectId, ref: "UserProfile" },
-    business: { type: Schema.Types.ObjectId, ref: "BusinessInfo" },
-    visit: Number,
-    answer0: String,
-    commentAnswer0: String,
-    answer1: String,
-    commentAnswer1: String,
-    answer2: String,
-    commentAnswer2: String,
-    answer3: String,
-    commentAnswer3: String,
-    answer4: String,
-    commentAnswer4: String,
-    answer5: String,
-    commentAnswer5: String,
-    answer6: String,
-    commentAnswer6: String,
-    answer7: String,
-    commentAnswer7: String,
-    answer8: String,
-    commentAnswer8: String,
-    created_date: { type: Date, default: Date.now },
-    update_date: { type: Date, default: Date.now },
+const AuditSchema = new Schema({
+    idComercio: { type: Schema.Types.ObjectId, ref: "BusinessInfo" },
+    idAuditor: { type: Schema.Types.ObjectId, ref: "UserProfile" },
+    producto: { type: String },
+    visita: { type: Number },
+    apertura: { type: String, enum: ['SI', 'NO'] },
+    aperturaComment: { type: String },
+    nevera: { type: String, enum: ['SI', 'NO'] },
+    neveraComment: { type: String },
+    neveraContenido: { type: String, enum: ['SI', 'NO'] },
+    neveraContenidoDetalle: { type: String },
+    lugarNevera1: { type: String },
+    neveraCantidad: { type: Number },
+    productoNevera1: { type: String },
+    productoNevera1Comment: { type: String },
+    lugarNevera2: { type: String },
+    productoNevera2: { type: String },
+    productoNevera2Comment: { type: String },
+    result: { type: String, enum: ['OK' , 'KO' , 'DEFAULT'] },
+    resultComment: { type: String },
+    created: { type: Date, default: Date.now, required: true },
+    updated: { type: Date, default: Date.now, required: true }
 });
+const AuditModel = mongoose.model<Audit>('Audit', AuditSchema);
+export default AuditModel;
 
-const AuditSchema = mongoose.model("audit", auditSchema);
-export default AuditSchema;
+

@@ -6,11 +6,9 @@ import {
     createBusinessInfo,
     updateBusinessInfo,
     deleteBusinessInfo,
-    addAuditToBusinessInfo
 } from '../controllers/business-info.controller';
 const router = Router();
 router.get('/search', getBusinessInfoBySearch);
-router.post('/:businessInfoId/add-audit', addAuditToBusinessInfo);
 router.get('/', getBusinessInfos);
 router.get('/:id', getBusinessInfoById);
 router.post('/', createBusinessInfo);

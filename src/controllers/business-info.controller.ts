@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import BusinessInfo from "../models/business-info.model";
-import mongoose from "mongoose";
 
 export const getBusinessInfos = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -51,28 +50,31 @@ export const createBusinessInfo = async (req: Request, res: Response): Promise<v
 
 export const getBusinessInfoBySearch = async (req: Request, res: Response): Promise<void> => {
     try {
-        let { province, locality, address, establishment } = req.query;
+        let { province, locality, distributor, address, establishment } = req.query;
+        console.log(req.query)
         const filter: { [key: string]: any } = {};
 
-        if (!province && !locality && !address && !establishment) {
+        if (!province && !locality && !distributor && !address && !establishment) {
             const provinces = await BusinessInfo.aggregate([
-                { $group: { _id: '$province' } },
-                { $sort: { _id: 1 } }
+                { $group: { _id: null, province: { $addToSet: "$province" } } },
+                { $unwind: "$province" },
+                { $sort: { province: 1 } }
             ]).exec();
-            res.status(200).json(provinces);
+            res.status(200).json(provinces.map(p => p.province));
             return;
         }
 
         if (province) {
             filter.province = province;
 
-            if (!locality && !establishment && !address) {
+            if (!locality && !distributor && !address && !establishment) {
                 const localities = await BusinessInfo.aggregate([
                     { $match: { province: province } },
-                    { $group: { _id: '$locality' } },
-                    { $sort: { _id: 1 } }
+                    { $group: { _id: null, locality: { $addToSet: "$locality" } } },
+                    { $unwind: "$locality" },
+                    { $sort: { locality: 1 } }
                 ]).exec();
-                res.status(200).json(localities);
+                res.status(200).json(localities.map(l => l.locality));
                 return;
             }
         }
@@ -81,39 +83,62 @@ export const getBusinessInfoBySearch = async (req: Request, res: Response): Prom
             filter.province = province;
             filter.locality = locality;
 
-            if (!establishment && !address) {
-                const establishments = await BusinessInfo.aggregate([
+            if (!distributor && !address && !establishment) {
+                const distributors = await BusinessInfo.aggregate([
                     { $match: { province: province, locality: locality } },
-                    { $group: { _id: '$establishment' } },
-                    { $sort: { _id: 1 } } 
+                    { $group: { _id: null, distributor: { $addToSet: "$distributor" } } },
+                    { $unwind: "$distributor" },
+                    { $sort: { distributor: 1 } }
                 ]).exec();
-                res.status(200).json(establishments);
+                res.status(200).json(distributors.map(d => d.distributor));
                 return;
             }
         }
 
-        if (establishment && locality && province) {
+        if (distributor && locality && province) {
             filter.province = province;
             filter.locality = locality;
-            filter.establishment = establishment;
+            filter.distributor = distributor;
 
-            if (!address) {
+            if (!address && !establishment) {
                 const addresses = await BusinessInfo.aggregate([
-                    { $match: { province: province, locality: locality, establishment: establishment } },
-                    { $group: { _id: '$address' } },
-                    { $sort: { _id: 1 } } 
+                    { $match: { province: province, locality: locality, distributor: distributor } },
+                    { $group: { _id: null, address: { $addToSet: "$address" } } },
+                    { $unwind: "$address" },
+                    { $sort: { address: 1 } }
                 ]).exec();
-                res.status(200).json(addresses);
+                res.status(200).json(addresses.map(a => a.address));
                 return;
             }
         }
 
-        if (address && establishment && locality && province) {
+        if (address && distributor && locality && province) {
             filter.province = province;
             filter.locality = locality;
-            filter.establishment = establishment;
+            filter.distributor = distributor;
             filter.address = address;
+
+            if (!establishment) {
+                const establishments = await BusinessInfo.aggregate([
+                    { $match: { province: province, locality: locality, distributor: distributor, address: address } },
+                    { $group: { _id: null, establishment: { $addToSet: "$establishment" } } },
+                    { $unwind: "$establishment" },
+                    { $sort: { establishment: 1 } }
+                ]).exec();
+                res.status(200).json(establishments.map(e => e.establishment));
+                return;
+            }
+        }
+
+        if ( address && distributor && locality && province && establishment) {
+            console.log("aca")
+            filter.province = province;
+            filter.locality = locality;
+            filter.distributor = distributor;
+            filter.address = address;
+            filter.establishment = establishment;
             const result = await BusinessInfo.findOne(filter).exec();
+            console.log(result)
             if (result) {
                 res.status(200).json(result);
             } else {
@@ -125,31 +150,6 @@ export const getBusinessInfoBySearch = async (req: Request, res: Response): Prom
     } catch (err) {
         console.error('Error al buscar datos:', err);
         res.status(500).json({ error: 'Error al buscar datos' });
-    }
-};
-
-export const addAuditToBusinessInfo = async (req: Request, res: Response): Promise<any> => {
-    const { businessInfoId } = req.params;
-    const { auditId, result } = req.body;
-    try {
-        if (!mongoose.Types.ObjectId.isValid(auditId)) {
-            return res.status(400).json({ error: 'Invalid auditId' });
-        }
-        const businessInfo = await BusinessInfo.findById(businessInfoId);
-        if (!businessInfo) {
-            return res.status(404).json({ error: 'BusinessInfo not found' });
-        }
-        const newAudit = {
-            auditId: auditId,
-            date: new Date(),
-            result: result
-        };
-        businessInfo.audits.push(newAudit);
-        await businessInfo.save();
-        res.status(201).json({ message: 'Audit added successfully', businessInfo });
-    } catch (error) {
-        console.error('Error adding audit:', error);
-        res.status(500).json({ error: 'Failed to add audit' });
     }
 };
 
