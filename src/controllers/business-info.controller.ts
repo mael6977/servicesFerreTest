@@ -11,10 +11,8 @@ export const getBusinessInfos = async (_req: Request, res: Response): Promise<vo
 };
 
 export const getBusinessInfoById = async (req: Request, res: Response): Promise<void> => {
-    console.log(req.params.id)
     try {
         const businessInfo = await BusinessInfo.findById(req.params.id);
-        console.log(businessInfo)
         if (!businessInfo) {
             res.status(404).json({ message: "BusinessInfo no encontrado" });
         } else {
@@ -51,7 +49,6 @@ export const createBusinessInfo = async (req: Request, res: Response): Promise<v
 export const getBusinessInfoBySearch = async (req: Request, res: Response): Promise<void> => {
     try {
         let { province, locality, distributor, address, establishment } = req.query;
-        console.log(req.query)
         const filter: { [key: string]: any } = {};
 
         if (!province && !locality && !distributor && !address && !establishment) {
@@ -131,14 +128,12 @@ export const getBusinessInfoBySearch = async (req: Request, res: Response): Prom
         }
 
         if ( address && distributor && locality && province && establishment) {
-            console.log("aca")
             filter.province = province;
             filter.locality = locality;
             filter.distributor = distributor;
             filter.address = address;
             filter.establishment = establishment;
             const result = await BusinessInfo.findOne(filter).exec();
-            console.log(result)
             if (result) {
                 res.status(200).json(result);
             } else {
