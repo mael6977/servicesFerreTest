@@ -3,6 +3,7 @@ import AuditModal from '../models/audit-reports.model';
 import BusinessInfo from '../models/business-info.model';
 import moment from 'moment';
 import ExcelJS from 'exceljs';
+import { Audit } from '../interfaces/audit.interface';
 
 export const getAudits = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -28,7 +29,7 @@ export const getAuditById = async (req: Request, res: Response): Promise<void> =
 
 export const createAudit = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { establishment, auditor, visit, result, resultComment, questions } = req.body;
+        const { establishment, auditor, distribuitor, visit, result: initialResult, resultComment, questions } = req.body;
         const fieldMapping: { [key: string]: string } = {
             'APERTURA': 'apertura',
             'APERTURA COMMENT': 'aperturaComment',
@@ -43,26 +44,40 @@ export const createAudit = async (req: Request, res: Response): Promise<void> =>
             'FOTOS NEVERA 1': 'fotosNevera1',
             'PRODUCTO NEVERA 2': 'productoNevera2',
             'PRODUCTO NEVERA 2 COMMENT': 'productoNevera2Comment',
-            'LUGAR NEVERA 2': 'lugarNevera2',
+            'LUGAR NEVERa 2': 'lugarNevera2',
             'FOTOS NEVERA 2': 'fotosNevera2'
         };
+        const mappedQuestions: { [key: string]: string } = {};
+        questions.forEach((question: { id: number, title: string, answer: string }) => {
+            const field = fieldMapping[question.title];
+            if (field) {
+                mappedQuestions[field] = question.answer;
+            }
+        });
+        let result: string;
+        if ((mappedQuestions['apertura'] === 'NO' && visit === 0) || (mappedQuestions['nevera'] === 'NO' && visit === 0)) {
+            result = 'DEFAULT';
+        } else if (mappedQuestions['apertura'] === 'SI' && mappedQuestions['nevera'] === 'SI') {
+            result = initialResult === 'SI' ? 'OK' : 'KO';
+        } else {
+            result = 'KO';
+        }
         const auditFields: any = {
             idComercio: establishment,
             idAuditor: auditor,
-            visita: visit,
-            result: result === 'SI' ? 'OK' : 'KO',
+            producto: distribuitor,
+            visita: visit + 1,
+            result,
             resultComment,
             created: new Date(),
             updated: new Date()
         };
-        questions.forEach((question: { id: number, title: string, answer: string }) => {
-            const field = fieldMapping[question.title];
-            if (field) {
-                if (question.answer.startsWith('[') && question.answer.endsWith(']')) {
-                    auditFields[field] = JSON.parse(question.answer);
-                } else {
-                    auditFields[field] = question.answer;
-                }
+        Object.keys(mappedQuestions).forEach(key => {
+            const value = mappedQuestions[key];
+            if (value.startsWith('[') && value.endsWith(']')) {
+                auditFields[key] = JSON.parse(value);
+            } else {
+                auditFields[key] = value;
             }
         });
         const audit = new AuditModal(auditFields);
@@ -98,6 +113,7 @@ interface QueryParamsDate {
     startDate: string;
     endDate: string;
 }
+
 export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryParamsDate>, res: Response): Promise<void> => {
     const { startDate, endDate } = req.query;
 
@@ -123,47 +139,53 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
             { header: 'Auditor', key: 'auditor', width: 20 },
             { header: 'Producto', key: 'producto', width: 20 },
             { header: 'Visita', key: 'visita', width: 10 },
+            { header: 'Resultado', key: 'result', width: 15 },
+            { header: 'Comentario Resultado', key: 'resultComment', width: 30 },
             { header: 'Apertura', key: 'apertura', width: 10 },
             { header: 'Comentario Apertura', key: 'aperturaComment', width: 30 },
             { header: 'Nevera', key: 'nevera', width: 10 },
             { header: 'Comentario Nevera', key: 'neveraComment', width: 30 },
             { header: 'Contenido Nevera', key: 'neveraContenido', width: 15 },
             { header: 'Detalle Contenido Nevera', key: 'neveraContenidoDetalle', width: 30 },
-            { header: 'Lugar Nevera 1', key: 'lugarNevera1', width: 20 },
             { header: 'Cantidad Nevera', key: 'neveraCantidad', width: 15 },
             { header: 'Producto Nevera 1', key: 'productoNevera1', width: 20 },
             { header: 'Comentario Producto Nevera 1', key: 'productoNevera1Comment', width: 30 },
-            { header: 'Lugar Nevera 2', key: 'lugarNevera2', width: 20 },
+            { header: 'Lugar Nevera 1', key: 'lugarNevera1', width: 20 },
+            { header: 'Fotos Nevera 1', key: 'fotosNevera1', width: 30 },
             { header: 'Producto Nevera 2', key: 'productoNevera2', width: 20 },
             { header: 'Comentario Producto Nevera 2', key: 'productoNevera2Comment', width: 30 },
-            { header: 'Resultado', key: 'result', width: 15 },
-            { header: 'Comentario Resultado', key: 'resultComment', width: 30 },
+            { header: 'Lugar Nevera 2', key: 'lugarNevera2', width: 20 },
+            { header: 'Fotos Nevera 2', key: 'fotosNevera2', width: 30 },
             { header: 'Fecha Creación', key: 'created', width: 20 },
+            { header: 'Fecha Actualización', key: 'updated', width: 20 },
         ];
 
-        audits.forEach(audit => {
+        audits.forEach((audit: Audit) => {
             worksheet.addRow({
-                id: audit?._id,
-                establishment: audit?.idComercio?._id,
-                auditor: audit?.idAuditor?._id,
+                id: audit._id,
+                establishment: audit.idComercio ? audit.idComercio.toString() : 'No especificado',
+                auditor: audit.idAuditor ? audit.idAuditor.toString() : 'No especificado',
                 producto: audit.producto || 'No especificado',
                 visita: audit.visita || 0,
+                result: audit.result || 'No especificado',
+                resultComment: audit.resultComment || '',
                 apertura: audit.apertura || 'No especificado',
                 aperturaComment: audit.aperturaComment || '',
                 nevera: audit.nevera || 'No especificado',
                 neveraComment: audit.neveraComment || '',
                 neveraContenido: audit.neveraContenido || 'No especificado',
-                neveraContenidoDetalle: audit.neveraContenidoDetalle || '',
-                lugarNevera1: audit.lugarNevera1 || '',
+                neveraContenidoDetalle: audit.neveraContenidoDetalle.join(', ') || '',
                 neveraCantidad: audit.neveraCantidad || 0,
                 productoNevera1: audit.productoNevera1 || '',
                 productoNevera1Comment: audit.productoNevera1Comment || '',
-                lugarNevera2: audit.lugarNevera2 || '',
+                lugarNevera1: audit.lugarNevera1.join(', ') || '',
+                fotosNevera1: audit.fotosNevera1.join(', ') || '',
                 productoNevera2: audit.productoNevera2 || '',
                 productoNevera2Comment: audit.productoNevera2Comment || '',
-                result: audit.result || 'No especificado',
-                resultComment: audit.resultComment || '',
+                lugarNevera2: audit.lugarNevera2.join(', ') || '',
+                fotosNevera2: audit.fotosNevera2.join(', ') || '',
                 created: moment(audit.created).format('YYYY-MM-DD HH:mm:ss'),
+                updated: moment(audit.updated).format('YYYY-MM-DD HH:mm:ss'),
             });
         });
 

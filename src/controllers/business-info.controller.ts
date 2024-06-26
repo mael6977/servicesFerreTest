@@ -26,12 +26,10 @@ export const getBusinessInfoById = async (req: Request, res: Response): Promise<
 export const createBusinessInfo = async (req: Request, res: Response): Promise<void> => {
     try {
         const data = req.body.data;
-
         if (!Array.isArray(data)) {
             res.status(400).json({ message: 'El formato de datos es incorrecto. Se esperaba un arreglo llamado "data".' });
             return;
         }
-
         const savedBusinessInfos = [];
         for (const item of data) {
             const businessInfo = new BusinessInfo(item);
