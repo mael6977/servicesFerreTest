@@ -4,6 +4,7 @@ import BusinessInfo from '../models/business-info.model';
 import moment from 'moment';
 import ExcelJS from 'exceljs';
 import { Audit } from '../interfaces/audit.interface';
+import AuditModel from '../models/audit-reports.model';
 
 export const getAudits = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -45,7 +46,10 @@ export const createAudit = async (req: Request, res: Response): Promise<void> =>
             'PRODUCTO NEVERA 2': 'productoNevera2',
             'PRODUCTO NEVERA 2 COMMENT': 'productoNevera2Comment',
             'LUGAR NEVERa 2': 'lugarNevera2',
-            'FOTOS NEVERA 2': 'fotosNevera2'
+            'FOTOS NEVERA 2': 'fotosNevera2',
+            'COMPETENCIA NEVERA PRESENCIA': 'competenciaNeveraPresencia',
+            'COMPETENCIA NEVERA CANTIDAD': 'competenciaNeveraCantidad',
+            'COMPETENCIA NEVERA MARCA': 'competenciaNeveraMarca',
         };
         const mappedQuestions: { [key: string]: string } = {};
         questions.forEach((question: { id: number, title: string, answer: string }) => {
@@ -116,23 +120,19 @@ interface QueryParamsDate {
 
 export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryParamsDate>, res: Response): Promise<void> => {
     const { startDate, endDate } = req.query;
-
     try {
-        const audits = await AuditModal.find({
+        const audits = await AuditModel.find({
             created: {
                 $gte: moment(startDate, 'YYYY-MM-DD').startOf('day').toDate(),
                 $lte: moment(endDate, 'YYYY-MM-DD').endOf('day').toDate(),
             },
         }).populate('idAuditor').populate('idComercio');
-
         if (!audits || audits.length === 0) {
             res.status(404).json({ message: 'No audits found for the specified date range' });
             return;
         }
-
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Audits');
-
         worksheet.columns = [
             { header: 'ID Auditoría', key: 'id', width: 10 },
             { header: 'Comercio', key: 'establishment', width: 30 },
@@ -156,10 +156,12 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
             { header: 'Comentario Producto Nevera 2', key: 'productoNevera2Comment', width: 30 },
             { header: 'Lugar Nevera 2', key: 'lugarNevera2', width: 20 },
             { header: 'Fotos Nevera 2', key: 'fotosNevera2', width: 30 },
+            { header: 'Presencia de Neveras de la Competencia', key: 'competenciaNeveraPresencia', width: 30 },
+            { header: 'Cantidad de Neveras de la Competencia', key: 'competenciaNeveraCantidad', width: 30 },
+            { header: 'Marca de Neveras de la Competencia', key: 'competenciaNeveraMarca', width: 30 },
             { header: 'Fecha Creación', key: 'created', width: 20 },
             { header: 'Fecha Actualización', key: 'updated', width: 20 },
         ];
-
         audits.forEach((audit: Audit) => {
             worksheet.addRow({
                 id: audit._id,
@@ -184,11 +186,13 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
                 productoNevera2Comment: audit.productoNevera2Comment || '',
                 lugarNevera2: audit.lugarNevera2.join(', ') || '',
                 fotosNevera2: audit.fotosNevera2.join(', ') || '',
+                competenciaNeveraPresencia: audit.competenciaNeveraPresencia || 'No especificado',
+                competenciaNeveraCantidad: audit.competenciaNeveraCantidad || 'No especificado',
+                competenciaNeveraMarca: audit.competenciaNeveraMarca || 'No especificado',
                 created: moment(audit.created).format('YYYY-MM-DD HH:mm:ss'),
                 updated: moment(audit.updated).format('YYYY-MM-DD HH:mm:ss'),
             });
         });
-
         const excelBuffer = await workbook.xlsx.writeBuffer();
         res.set({
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

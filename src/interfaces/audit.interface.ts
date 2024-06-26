@@ -22,6 +22,9 @@ export interface Audit extends Document {
   productoNevera2Comment: string;
   lugarNevera2: string[];
   fotosNevera2: string[];
+  competenciaNeveraPresencia : string,
+  competenciaNeveraCantidad  : string,
+  competenciaNeveraMarca : string,
   created: Date;
   updated: Date;
 }

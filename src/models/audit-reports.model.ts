@@ -23,6 +23,9 @@ const AuditSchema = new Schema({
     productoNevera2Comment: { type: String, default: '' },
     lugarNevera2: { type: [String], default: [] },
     fotosNevera2: { type: [String], default: [] },
+    competenciaNeveraPresencia : { type: String, default: '' },
+    competenciaNeveraCantidad  : { type: String, default: '' },
+    competenciaNeveraMarca : { type: String, default: '' },
     created: { type: Date, default: Date.now, required: true },
     updated: { type: Date, default: Date.now, required: true }
 });
