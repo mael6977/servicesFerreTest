@@ -13,6 +13,7 @@ const AuditSchema = new Schema({
     nevera: { type: String, enum: ['SI', 'NO', ''], default: '' },
     neveraComment: { type: String, default: '' },
     neveraContenido: { type: String, enum: ['SI', 'NO', ''], default: '' },
+    neveraContenidoComment: { type: String, default: '' },
     neveraContenidoDetalle: { type: [String], default: [] },
     neveraCantidad: { type: Number },
     productoNevera1: { type: String, default: '' },

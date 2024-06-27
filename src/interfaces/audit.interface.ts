@@ -12,6 +12,7 @@ export interface Audit extends Document {
   nevera: 'SI' | 'NO' | '';
   neveraComment: string;
   neveraContenido: 'SI' | 'NO' | '';
+  neveraContenidoComment: string,
   neveraContenidoDetalle: string[];
   neveraCantidad?: number;
   productoNevera1: string;

@@ -45,7 +45,7 @@ export const createAudit = async (req: Request, res: Response): Promise<void> =>
             'FOTOS NEVERA 1': 'fotosNevera1',
             'PRODUCTO NEVERA 2': 'productoNevera2',
             'PRODUCTO NEVERA 2 COMMENT': 'productoNevera2Comment',
-            'LUGAR NEVERa 2': 'lugarNevera2',
+            'LUGAR NEVERA 2': 'lugarNevera2',
             'FOTOS NEVERA 2': 'fotosNevera2',
             'COMPETENCIA NEVERA PRESENCIA': 'competenciaNeveraPresencia',
             'COMPETENCIA NEVERA CANTIDAD': 'competenciaNeveraCantidad',
