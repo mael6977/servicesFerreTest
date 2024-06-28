@@ -127,18 +127,21 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
                 $lte: moment(endDate, 'YYYY-MM-DD').endOf('day').toDate(),
             },
         }).populate('idAuditor').populate('idComercio');
+        
         if (!audits || audits.length === 0) {
             res.status(404).json({ message: 'No audits found for the specified date range' });
             return;
         }
+
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Audits');
+
         worksheet.columns = [
-            { header: 'ID Auditoría', key: 'id', width: 10 },
+            { header: 'ID Auditoría', key: 'id', width: 30 },
             { header: 'Comercio', key: 'establishment', width: 30 },
-            { header: 'Auditor', key: 'auditor', width: 20 },
+            { header: 'Auditor', key: 'auditor', width: 30 },
             { header: 'Producto', key: 'producto', width: 20 },
-            { header: 'Visita', key: 'visita', width: 10 },
+            { header: 'Visita', key: 'visita', width: 15 },
             { header: 'Resultado', key: 'result', width: 15 },
             { header: 'Comentario Resultado', key: 'resultComment', width: 30 },
             { header: 'Apertura', key: 'apertura', width: 10 },
@@ -146,6 +149,7 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
             { header: 'Nevera', key: 'nevera', width: 10 },
             { header: 'Comentario Nevera', key: 'neveraComment', width: 30 },
             { header: 'Contenido Nevera', key: 'neveraContenido', width: 15 },
+            { header: 'Comentario Contenido Nevera', key: 'neveraContenidoComment', width: 30 },
             { header: 'Detalle Contenido Nevera', key: 'neveraContenidoDetalle', width: 30 },
             { header: 'Cantidad Nevera', key: 'neveraCantidad', width: 15 },
             { header: 'Producto Nevera 1', key: 'productoNevera1', width: 20 },
@@ -162,11 +166,12 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
             { header: 'Fecha Creación', key: 'created', width: 20 },
             { header: 'Fecha Actualización', key: 'updated', width: 20 },
         ];
+
         audits.forEach((audit: Audit) => {
             worksheet.addRow({
                 id: audit._id,
-                establishment: audit.idComercio ? audit.idComercio.toString() : 'No especificado',
-                auditor: audit.idAuditor ? audit.idAuditor.toString() : 'No especificado',
+                establishment: audit?.idComercio?._id ? audit?.idComercio?._id.toString() : 'No especificado',
+                auditor: audit?.idAuditor?._id ? audit?.idAuditor?._id.toString() : 'No especificado',
                 producto: audit.producto || 'No especificado',
                 visita: audit.visita || 0,
                 result: audit.result || 'No especificado',
@@ -176,6 +181,7 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
                 nevera: audit.nevera || 'No especificado',
                 neveraComment: audit.neveraComment || '',
                 neveraContenido: audit.neveraContenido || 'No especificado',
+                neveraContenidoComment: audit.neveraContenidoComment || '',
                 neveraContenidoDetalle: audit.neveraContenidoDetalle.join(', ') || '',
                 neveraCantidad: audit.neveraCantidad || 0,
                 productoNevera1: audit.productoNevera1 || '',
@@ -193,6 +199,7 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
                 updated: moment(audit.updated).format('YYYY-MM-DD HH:mm:ss'),
             });
         });
+
         const excelBuffer = await workbook.xlsx.writeBuffer();
         res.set({
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
