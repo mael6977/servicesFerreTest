@@ -1,8 +1,27 @@
 import { Document, Types } from 'mongoose';
 
 export interface Audit extends Document {
-  idComercio: Types.ObjectId;
-  idAuditor: Types.ObjectId;
+  idComercio: {
+    _id: Types.ObjectId;
+    province: string;
+    locality: string;
+    distributor: string;
+    address: string;
+    establishment: string;
+    audits: any[];
+    created_date: Date;
+    update_date: Date;
+  };
+  idAuditor: {
+    _id: Types.ObjectId;
+    name: string;
+    lastName: string;
+    email: string;
+    password: string;
+    role: Types.ObjectId;
+    created_date: Date;
+    update_date: Date;
+  };
   producto: string;
   visita: number;
   result: 'OK' | 'KO' | 'DEFAULT' | '';
@@ -12,7 +31,7 @@ export interface Audit extends Document {
   nevera: 'SI' | 'NO' | '';
   neveraComment: string;
   neveraContenido: 'SI' | 'NO' | '';
-  neveraContenidoComment: string,
+  neveraContenidoComment: string;
   neveraContenidoDetalle: string[];
   neveraCantidad?: number;
   productoNevera1: string;
@@ -23,9 +42,9 @@ export interface Audit extends Document {
   productoNevera2Comment: string;
   lugarNevera2: string[];
   fotosNevera2: string[];
-  competenciaNeveraPresencia : string,
-  competenciaNeveraCantidad  : string,
-  competenciaNeveraMarca : string,
+  competenciaNeveraPresencia: string;
+  competenciaNeveraCantidad: string;
+  competenciaNeveraMarca: string;
   created: Date;
   updated: Date;
 }

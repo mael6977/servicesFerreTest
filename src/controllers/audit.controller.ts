@@ -127,19 +127,17 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
                 $lte: moment(endDate, 'YYYY-MM-DD').endOf('day').toDate(),
             },
         }).populate('idAuditor').populate('idComercio');
-        
+
         if (!audits || audits.length === 0) {
             res.status(404).json({ message: 'No audits found for the specified date range' });
             return;
         }
-
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Audits');
-
         worksheet.columns = [
-            { header: 'ID Auditoría', key: 'id', width: 30 },
-            { header: 'Comercio', key: 'establishment', width: 30 },
-            { header: 'Auditor', key: 'auditor', width: 30 },
+            { header: 'ID Auditoría', key: 'id', width: 35 },
+            { header: 'Comercio', key: 'establishment', width: 25 },
+            { header: 'Auditor', key: 'auditorEmail', width: 25 },
             { header: 'Producto', key: 'producto', width: 20 },
             { header: 'Visita', key: 'visita', width: 15 },
             { header: 'Resultado', key: 'result', width: 15 },
@@ -170,8 +168,8 @@ export const generateAuditReportExcel = async (req: Request<{}, {}, {}, QueryPar
         audits.forEach((audit: Audit) => {
             worksheet.addRow({
                 id: audit._id,
-                establishment: audit?.idComercio?._id ? audit?.idComercio?._id.toString() : 'No especificado',
-                auditor: audit?.idAuditor?._id ? audit?.idAuditor?._id.toString() : 'No especificado',
+                establishment: audit.idComercio?.establishment || 'No especificado',
+                auditorEmail: audit.idAuditor?.email || 'No especificado',
                 producto: audit.producto || 'No especificado',
                 visita: audit.visita || 0,
                 result: audit.result || 'No especificado',
